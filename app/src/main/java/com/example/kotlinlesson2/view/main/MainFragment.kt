@@ -1,4 +1,4 @@
-package com.example.kotlinlesson2.view
+package com.example.kotlinlesson2.view.main
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -7,25 +7,28 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import com.example.kotlinlesson2.R
 import com.example.kotlinlesson2.databinding.FragmentMainBinding
 import com.example.kotlinlesson2.domain.Weather
+import com.example.kotlinlesson2.view.OnItemViewClickListener
 import com.example.kotlinlesson2.viewmodel.AppState
 import com.example.kotlinlesson2.viewmodel.MainViewModel
 import com.google.android.material.snackbar.Snackbar
 
-class MainFragment : Fragment() {
+class MainFragment : Fragment(), OnItemViewClickListener {
 
     private var _binding: FragmentMainBinding? = null
     private val binding: FragmentMainBinding
         get() {
             return _binding!!
         }
+    private var isDataSetRus: Boolean = true
+    private val adapter = MainFragmentAdapter()
     private lateinit var viewModel: MainViewModel
 
     companion object {
         fun newInstance() = MainFragment()
     }
-
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -38,42 +41,57 @@ class MainFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        binding.mainFragmentRecyclerView.adapter = adapter
+        adapter.setOnItemViewClickListener(this)
+        binding.mainFragmentFAB.setOnClickListener {
+            isDataSetRus = !isDataSetRus
+            if (isDataSetRus) {
+                viewModel.getWeatherFromLocalSourceRussia()
+                binding.mainFragmentFAB.setImageResource(R.drawable.ic_russia)
+            } else {
+                viewModel.getWeatherFromLocalSourceWorld()
+                binding.mainFragmentFAB.setImageResource(R.drawable.ic_earth)
+            }
+        }
         viewModel = ViewModelProvider(this).get(MainViewModel::class.java)
         viewModel.getLiveData().observe(viewLifecycleOwner, Observer<AppState> {
             renderData(it)
         })
-        viewModel.getDataFromRemoteSource()
+        viewModel.getWeatherFromLocalSourceRussia()
     }
 
     private fun renderData(appState: AppState) {
         when (appState) {
             is AppState.Error -> {
-                binding.loadingLayout.visibility = View.GONE
-                val throwable = appState.error
-                Snackbar.make(binding.mainView, "Ошибка", Snackbar.LENGTH_LONG).show()
+                binding.mainFragmentLoadingLayout.visibility = View.GONE
+                Snackbar.make(binding.root, "Ошибка", Snackbar.LENGTH_LONG).show()
             }
             AppState.Loading -> {
-                binding.loadingLayout.visibility = View.VISIBLE
+                binding.mainFragmentLoadingLayout.visibility = View.VISIBLE
             }
             is AppState.Success -> {
-                binding.loadingLayout.visibility = View.GONE
+                binding.mainFragmentLoadingLayout.visibility = View.GONE
                 val weather = appState.weatherData
-                setData(weather)
-                Snackbar.make(binding.mainView, "Готово", Snackbar.LENGTH_LONG).show()
+                adapter.setWeather(weather)
+                Snackbar.make(binding.root, "Готово", Snackbar.LENGTH_LONG).show()
             }
         }
 
     }
 
-    private fun setData(weather: Weather) {
-        binding.cityName.text = weather.city.name
-        binding.cityCoordinates.text = "lat ${weather.city.lat} \n lon ${weather.city.lon}"
-        binding.temperatureValue.text = weather.temperature.toString()
-        binding.feelsLikeValue.text = weather.feelsLike.toString()
-    }
 
     override fun onDestroy() {
         super.onDestroy()
         _binding = null
+    }
+
+    override fun onItemClick(weather: Weather) {
+        val bundle = Bundle()
+        bundle.putParcelable(DetailsFragment.BUNDLE_WEATHER_KEY, weather)
+        requireActivity().supportFragmentManager
+            .beginTransaction()
+            .add(R.id.fragment_container, DetailsFragment.newInstance(bundle))
+            .addToBackStack("").commit()
+
     }
 }
