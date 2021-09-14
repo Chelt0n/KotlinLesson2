@@ -8,29 +8,27 @@ import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import com.example.kotlinlesson2.R
 import com.example.kotlinlesson2.domain.Weather
-import com.example.kotlinlesson2.view.OnItemViewClickListener
 
 
-class MainFragmentAdapter : RecyclerView.Adapter<MainFragmentAdapter.MainFragmentViewHolder>() {
+class MainFragmentAdapter (
+    private val listener: (Weather) -> Unit
+        ): RecyclerView.Adapter<MainFragmentAdapter.MainFragmentViewHolder>() {
 
-    private var weatherData:List<Weather> = listOf()
-    private lateinit var listener: OnItemViewClickListener
+    private var weatherData: MutableList<Weather> = mutableListOf()
 
-    fun setWeather(data:List<Weather>){
-        weatherData = data
+    fun setWeather(data: List<Weather>) {
+        weatherData.clear()
+        weatherData.addAll(data)
         notifyDataSetChanged()
     }
-    fun setOnItemViewClickListener (onItemViewClickListener:OnItemViewClickListener){
-        listener = onItemViewClickListener
-    }
+
 
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MainFragmentViewHolder {
-        val holder = MainFragmentViewHolder(
+        return MainFragmentViewHolder(
             LayoutInflater.from(parent.context)
                 .inflate(R.layout.fragment_main_recycler_item, parent, false)
         )
-        return holder;
     }
 
     override fun onBindViewHolder(holder: MainFragmentViewHolder, position: Int) {
@@ -43,15 +41,13 @@ class MainFragmentAdapter : RecyclerView.Adapter<MainFragmentAdapter.MainFragmen
         fun render(weather: Weather) {
             itemView.findViewById<TextView>(R.id.mainFragmentRecyclerItemTextView).text =
                 weather.city.name
-            itemView.setOnClickListener(object : View.OnClickListener {
-                override fun onClick(view: View) {
-                    Toast.makeText(itemView.context, "РАБОТАЕТ", Toast.LENGTH_SHORT).show()
-                    listener.onItemClick(weather)
-                }
-            })
             itemView.setOnClickListener {
                 Toast.makeText(itemView.context, "РАБОТАЕТ", Toast.LENGTH_SHORT).show()
-                listener.onItemClick(weather)
+                listener.invoke(weather)
+            }
+            itemView.setOnClickListener {
+                Toast.makeText(itemView.context, "РАБОТАЕТ", Toast.LENGTH_SHORT).show()
+                listener.invoke(weather)
             }
         }
     }

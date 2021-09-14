@@ -31,7 +31,7 @@ class DetailsFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         _binding = FragmentDetailsBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -39,15 +39,20 @@ class DetailsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val weather = (arguments?.getParcelable(BUNDLE_WEATHER_KEY)) ?: Weather()
-        setData(weather)
+        arguments?.let {
+            val weather = (it.getParcelable(BUNDLE_WEATHER_KEY)) ?: Weather()
+            setData(weather)
+        }
     }
 
     private fun setData(weather: Weather) {
-        binding.cityName.text = weather.city.name
-        binding.cityCoordinates.text = "lat ${weather.city.lat}\n lon ${weather.city.lon}"
-        binding.temperatureValue.text = weather.temperature.toString()
-        binding.feelsLikeValue.text = "${weather.feelsLike}"
+        with(binding) {
+            cityName.text = weather.city.name
+            cityCoordinates.text = "lat ${weather.city.lat}\n lon ${weather.city.lon}"
+            temperatureValue.text = weather.temperature.toString()
+            feelsLikeValue.text = "${weather.feelsLike}"
+        }
+
     }
 
     override fun onDestroy() {
